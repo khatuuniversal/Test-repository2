@@ -1928,4 +1928,49 @@ start();
   $('#nav').addEventListener('click', e => { if (e.target.closest('[data-caret],[data-hist],#more')) return; if (e.target.closest('[data-t],#bkbtn,#dlbtn')) tg(false); }); })();
 
 if (calm) document.querySelectorAll('#wm circle').forEach(c => c.remove()); // reduced motion: no moving dot
-</script></body></html>
+</script><script>
+(function () {
+  function isTopNav(el) {
+    return Boolean(el && el.closest("header, nav, [role=\"navigation\"], .navbar, .nav-menu, .top-nav, .header-nav"));
+  }
+  function getBodySection() {
+    const sections = Array.from(document.querySelectorAll("main, section, .page-body, .site-content, .builder-canvas, .canvas-area, [data-canvas]"));
+    for (const s of sections) {
+      if (!isTopNav(s) && s.offsetHeight > 120) return s;
+    }
+    return document.body;
+  }
+  function createVideoBlock(url) {
+    const clean = (url || "").trim();
+    const box = document.createElement("section");
+    box.className = "khatu-body-video-block";
+    box.style.cssText = "max-width:900px;margin:24px auto;padding:16px;border:1px solid #cbd5e1;border-radius:12px;background:#0f172a;color:#fff;";
+    const yt = clean.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([A-Za-z0-9_-]{6,})/);
+    if (yt) {
+      box.innerHTML = "<div style=\"margin-bottom:8px;font-weight:600;\">Added Video</div><iframe src=\"https://www.youtube.com/embed/" + yt[1] + "\" style=\"width:100%;aspect-ratio:16/9;border:0;border-radius:8px;display:block;\" allowfullscreen></iframe>";
+      return box;
+    }
+    if (clean) {
+      box.innerHTML = "<div style=\"margin-bottom:8px;font-weight:600;\">Added Video</div><video src=\"" + clean + "\" controls playsinline preload=\"metadata\" style=\"width:100%;max-height:480px;border-radius:8px;display:block;background:#000;\"></video>";
+    } else {
+      box.innerHTML = "<div style=\"margin-bottom:8px;font-weight:600;\">Video Block</div><div style=\"padding:32px;text-align:center;border:1px dashed #64748b;border-radius:8px;\">Video added in page body</div>";
+    }
+    return box;
+  }
+  function fixVideoPlacement() {
+    const navItems = Array.from(document.querySelectorAll("header a, header button, header li, header span, nav a, nav button, nav li, nav span"));
+    const target = getBodySection();
+    navItems.forEach((el) => {
+      if (/^video$/i.test((el.textContent || "").trim()) && !el.closest("[data-keep-nav]")) {
+        const src = el.getAttribute("href") || el.getAttribute("data-video-url") || el.getAttribute("data-src") || "";
+        target.appendChild(createVideoBlock(src));
+        el.remove();
+      }
+    });
+  }
+  new MutationObserver(fixVideoPlacement).observe(document.documentElement, { childList: true, subtree: true });
+  document.addEventListener("DOMContentLoaded", fixVideoPlacement);
+  window.addEventListener("load", fixVideoPlacement);
+})();
+</script>
+</body></html>
